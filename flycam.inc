@@ -231,17 +231,20 @@ public OnPlayerUpdate(playerid) {
 	forward Cam_OnPlayerUpdate(playerid);
 #endif
 
-stock SetPlayerCamera(playerid, type = 1) {
+#define FLOAT_NAN (Float:0x7FFFFFFF)
+
+stock SetPlayerCamera(playerid, type = 1, Float:X = FLOAT_NAN, Float:Y = FLOAT_NAN, Float:Z = FLOAT_NAN, Float:lookX = FLOAT_NAN, Float:lookY = FLOAT_NAN, Float:lookZ = FLOAT_NAN) {
 	switch (type) {
 		case 1,2: {
 			TogglePlayerSpectating(playerid, true);
 
-			new
-				Float:X,
-				Float:Y,
-				Float:Z
-			;
-			GetPlayerPos(playerid, X, Y, Z);
+			if(Z == FLOAT_NAN)
+				GetPlayerPos(playerid, X, Y, Z);
+			
+			SetPlayerCameraPos(playerid, X, Y, Z);
+			if(lookZ != FLOAT_NAN)
+				SetPlayerCameraLookAt(playerid, lookX, lookY, lookZ);
+			
 			g_FlyMode[playerid][flyObject] = CreateDynamicObject(19300, X, Y, Z, 0.0, 0.0, 0.0, .playerid = playerid);
 			AttachCameraToDynamicObject(playerid, g_FlyMode[playerid][flyObject]);
 
@@ -281,5 +284,20 @@ stock SetPlayerCameraSpeed(playerid, Float:speed) {
 stock Float:GetPlayerCameraSpeed(playerid) {
     return g_FlyMode[playerid][flyMovementSpeed];
 }
+
+stock Cam_SetPlayerCameraPos(playerid, Float:x, Float:y, Float:z) {
+	if(g_FlyMode[playerid][flyType] == 1 || g_FlyMode[playerid][flyType] == 2) {
+		StopDynamicObject(g_FlyMode[playerid][flyObject]);
+		return SetDynamicObjectPos(g_FlyMode[playerid][flyObject], x, y, z);
+	}
+	else
+		return SetPlayerCameraPos(playerid, x, y, z);
+}
+#if defined _ALS_SetPlayerCameraPos
+	#undef SetPlayerCameraPos
+#else
+	#define _ALS_SetPlayerCameraPos
+#endif
+#define SetPlayerCameraPos Cam_SetPlayerCameraPos
 
 forward OnPlayerCameraUpdate(playerid, Float:oldx, Float:oldy, Float:oldz, olddir, Float:newx, Float:newy, Float:newz, newdir);
